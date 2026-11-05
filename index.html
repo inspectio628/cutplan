@@ -1,0 +1,663 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>컷플랜</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+/* Layout: 상단 단계 탭 + 본문. 넓은 화면은 입력(좌) / 프롬프트·이미지(우) 2단, 좁은 화면은 1단. */
+:root{
+  --bg:#f2f4f6; --surface:#ffffff; --ink:#18212b; --muted:#5d6b7a; --line:#d8dee4;
+  --accent:#0e6f68; --accent-ink:#ffffff; --accent-soft:#dff1ef; --mark:#e0a800; --danger:#b42318; --ok:#1a7f4b;
+  --f-display:"Gowun Batang","Noto Serif KR","Batang",serif;
+  --f-body:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12181e; --surface:#1b242d; --ink:#e8edf1; --muted:#9aa8b5; --line:#2c3844;
+  --accent:#4fc3b9; --accent-ink:#0a1a18; --accent-soft:#1a3532; --mark:#f0c13a; --danger:#ff8a7a; --ok:#5fd394; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12181e; --surface:#1b242d; --ink:#e8edf1; --muted:#9aa8b5; --line:#2c3844;
+  --accent:#4fc3b9; --accent-ink:#0a1a18; --accent-soft:#1a3532; --mark:#f0c13a; --danger:#ff8a7a; --ok:#5fd394; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6;
+  padding-block:0;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1120px;margin:0 auto}
+header.top{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;padding:18px 0 10px}
+header.top h1{font-family:var(--f-display);font-size:26px;margin:0;letter-spacing:-.01em;text-wrap:balance}
+header.top p{margin:0;color:var(--muted);font-size:13px}
+.saved{margin-left:auto;font-size:12px;color:var(--muted)}
+nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:flex;gap:4px;background:var(--bg);padding:6px 0;border-bottom:1px solid var(--line);overflow-x:auto}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+nav.tabs button{flex:1 0 auto;border:0;background:transparent;color:var(--muted);font:inherit;font-weight:500;padding:9px 14px;border-radius:8px;cursor:pointer;white-space:nowrap}
+nav.tabs button .n{display:inline-block;width:20px;height:20px;line-height:20px;text-align:center;border-radius:50%;background:var(--line);color:var(--ink);font-size:12px;margin-right:6px}
+nav.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 0 0 1px var(--line)}
+nav.tabs button[aria-selected="true"] .n{background:var(--accent);color:var(--accent-ink)}
+main{padding:18px 0 60px;display:block}
+h2{font-family:var(--f-display);font-size:20px;margin:0 0 4px}
+h3{font-size:14px;margin:0 0 8px;color:var(--muted);font-weight:700;letter-spacing:.04em}
+.lead{color:var(--muted);margin:0 0 16px;max-width:65ch}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px;min-width:0}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.split{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px;align-items:start}
+.split .stick{position:sticky;top:64px}
+@media(max-width:820px){.split{grid-template-columns:minmax(0,1fr)}.split .stick{position:static}}
+label{display:block;font-size:13px;font-weight:500;margin-bottom:4px}
+label .req{color:var(--danger)}
+.field{margin-bottom:12px;min-width:0}
+input[type=text],select,textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px;min-width:0}
+textarea{resize:vertical;min-height:72px}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.tip{font-size:12px;color:var(--muted);margin:4px 0 0;min-height:18px}
+.btn{font:inherit;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:8px 14px;border-radius:8px;cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.danger{color:var(--danger)}
+.btn.small{padding:4px 10px;font-size:13px}
+.btn[disabled]{opacity:.5;cursor:default}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.strip{display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;margin-bottom:6px}
+.chip{flex:0 0 auto;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:5px 12px;font:inherit;font-size:13px;cursor:pointer}
+.chip[aria-pressed="true"],.chip.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.chip.add{border-style:dashed;color:var(--muted)}
+.state{font-size:11px;padding:1px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-weight:700}
+.promptbox{font-family:var(--f-body);font-size:14px;line-height:1.65;min-height:190px}
+.dropzone{border:2px dashed var(--line);border-radius:10px;min-height:150px;display:grid;place-items:center;text-align:center;color:var(--muted);padding:12px;cursor:pointer;background:var(--bg)}
+.dropzone.over{border-color:var(--accent);background:var(--accent-soft)}
+.imgframe{width:100%;background:#000;border-radius:8px;overflow:hidden;position:relative}
+.imgframe img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.warn{background:color-mix(in srgb,var(--mark) 18%,var(--surface));border:1px solid var(--mark);border-radius:8px;padding:8px 12px;font-size:13px;margin-bottom:12px}
+.hist{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.hist li{border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px}
+.hist .v{font-weight:700;color:var(--accent);margin-right:6px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.card .meta{font-size:12px;color:var(--muted)}
+.card .scene{font-size:14px;margin:0}
+.empty{display:grid;place-items:center;height:100%;color:#8a97a3;font-size:13px;text-align:center;padding:8px}
+.pages{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-top:12px}
+.pages img{width:100%;border:1px solid var(--line);border-radius:6px;background:#fff}
+.check{display:flex;gap:8px;align-items:flex-start;margin-bottom:6px;font-size:14px}
+.check input{margin-top:5px}
+details.help{border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:10px 14px;margin-bottom:16px}
+details.help summary{cursor:pointer;font-weight:700}
+details.help table{border-collapse:collapse;width:100%;font-size:13px;margin-top:8px}
+details.help td,details.help th{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:999px;font-size:14px;z-index:20;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.show{opacity:1}
+@media(prefers-reduced-motion:reduce){.toast{transition:none}}
+html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);-webkit-text-size-adjust:100%}
+body{margin:0}img{max-width:100%}[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>컷플랜</h1>
+    <p>시 · 소설 · 시나리오를 컷으로 옮기고, 이미지 생성용 프롬프트를 조립하는 스토리보드 도구</p>
+    <span class="saved" id="saved" role="status"></span>
+  </header>
+  <nav class="tabs" id="tabs" role="tablist" aria-label="작업 단계"></nav>
+  <main id="view"></main>
+</div>
+<div class="toast" id="toast" role="status"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+/* ===== 데이터 사전: [화면에 보이는 말, 영어 키워드, 한 줄 설명] ===== */
+const OPT = {
+  shot: [
+    ['익스트림 롱샷','extreme long shot','인물이 아주 작게 보이고 공간이 압도한다. 고독, 막막함, 거대한 배경.'],
+    ['롱샷','long shot','인물과 주변 공간이 함께 보인다. 상황과 장소를 알려 준다.'],
+    ['풀샷','full shot','인물의 전신이 보인다. 몸짓과 자세로 감정을 전한다.'],
+    ['미디엄샷','medium shot','허리 위쪽. 대화와 행동을 가장 자연스럽게 보여 준다.'],
+    ['미디엄 클로즈업','medium close-up','가슴 위쪽. 표정과 감정에 집중하기 시작한다.'],
+    ['클로즈업','close-up','얼굴이나 사물 하나를 크게. 감정과 상징을 강조한다.'],
+    ['익스트림 클로즈업','extreme close-up','눈, 손끝처럼 아주 일부. 긴장감과 디테일을 강조한다.']
+  ],
+  angle: [
+    ['아이레벨','eye-level angle','눈높이. 중립적이고 현실감이 있다.'],
+    ['로우앵글','low angle','아래에서 위로. 인물이 크고 강하게, 또는 위압적으로 보인다.'],
+    ['하이앵글','high angle','위에서 아래로. 인물이 작고 약하게, 무력하게 보인다.'],
+    ['버즈아이(항공 시점)','bird\'s-eye view','바로 위에서 내려다본다. 전체 배치와 운명적인 느낌.'],
+    ['더치앵글(기울임)','Dutch angle','화면을 기울인다. 불안, 혼란.'],
+    ['오버더숄더','over-the-shoulder shot','한 인물의 어깨 너머로 상대를 본다. 관계와 시선.'],
+    ['인물 시점(POV)','point-of-view shot','인물이 보는 장면 그대로. 몰입감.']
+  ],
+  comp: [
+    ['삼분할','rule of thirds composition','화면을 3등분한 선과 교차점에 주인공을 둔다. 안정적이고 자연스럽다.'],
+    ['중앙 배치','centered composition','가운데에 놓는다. 강조, 정면 대결, 정적인 느낌.'],
+    ['대칭','symmetrical composition','좌우가 균형. 질서, 긴장, 숨 막히는 분위기.'],
+    ['프레임 속 프레임','frame within a frame','문, 창문 등으로 한 번 더 감싼다. 갇힘, 엿보기.'],
+    ['넓은 여백','negative space','빈 공간을 크게 남긴다. 외로움, 여운.'],
+    ['전경 활용','foreground framing','앞쪽 사물이 인물을 가린다. 깊이감, 거리감.'],
+    ['대각선','diagonal composition','대각선 배치. 움직임, 불안정.']
+  ],
+  light: [
+    ['자연광','natural light',''],['역광','backlight',''],['측광','side lighting',''],
+    ['노을빛','golden hour light',''],['푸른 새벽빛','blue hour light',''],
+    ['흐린 날의 부드러운 빛','soft overcast light',''],['어두운 실내(저조도)','low-key lighting',''],['밝고 선명한 빛','high-key lighting','']
+  ],
+  tone: [
+    ['따뜻한 톤','warm tones'],['차가운 톤','cool tones'],['저채도','desaturated colors'],
+    ['흑백','black and white'],['선명한 색','vivid colors'],['파스텔','pastel colors']
+  ],
+  style: [
+    ['실사 영화 스틸','cinematic film still'],['수채화','watercolor illustration'],
+    ['흑백 필름 사진','black and white film photograph'],['웹툰풍','webtoon style illustration'],
+    ['애니메이션풍','animation style illustration'],['연필 스케치','pencil sketch'],['유화','oil painting']
+  ],
+  ratio: ['16:9','4:3','2.39:1','1:1','9:16'],
+  src: ['AI 생성','직접 촬영','스케치'],
+  status: ['작성 중','프롬프트 완료','이미지 생성됨','수정 중','완료'],
+  reasons: ['앵글','샷 크기','구도','분위기·색감','인물 묘사','배경','기타']
+};
+const EN = (group, ko) => { const r = OPT[group].find(o => o[0] === ko); return r ? r[1] : ''; };
+const TIP = (group, ko) => { const r = OPT[group].find(o => o[0] === ko); return r && r[2] ? r[2] : ''; };
+
+/* ===== 상태 ===== */
+const uid = () => Math.random().toString(36).slice(2, 9);
+const newCut = () => ({ id: uid(), verse: '', scene: '', chars: [], place: '', shot: '', angle: '', comp: '', light: '', tone: '', mood: '',
+  intent: '', sound: '', src: 'AI 생성', status: '작성 중', edited: false, override: '', hist: [], img: '', example: false });
+const blank = () => ({
+  meta: { poem: '', poet: '', author: '', ratio: '16:9', style: '실사 영화 스틸', styleNote: '', lang: 'ko' },
+  chars: [], cuts: [newCut()], sel: 0,
+  reflect: { keep: '', add: '', drop: '', gap: '', lesson: '', decided: { look: false, angle: false, mood: false, order: false }, tool: '' }
+});
+const example = () => {
+  const s = blank();
+  s.meta.poem = '예시: 비 오는 정류장'; s.meta.poet = '(예시)'; s.meta.author = '';
+  s.chars = [{ id: 'c1', name: '소녀', look: '단발머리, 노란 우산, 회색 교복' }];
+  const c = newCut(); c.example = true;
+  Object.assign(c, { verse: '(여기에 시 구절을 적어요)', scene: '비가 그친 저녁, 소녀가 빈 정류장 의자에 혼자 앉아 접힌 우산을 무릎에 올려 두고 있다.',
+    chars: ['c1'], place: '비 갠 뒤 젖은 정류장, 해 질 무렵', shot: '미디엄샷', angle: '하이앵글', comp: '넓은 여백', light: '노을빛', tone: '차가운 톤',
+    mood: '쓸쓸하지만 조금 후련한', intent: '하이앵글을 쓴 이유는 소녀가 세상 속에서 작고 외로워 보이게 하여 시의 쓸쓸한 정서를 살리기 위해서다.' });
+  s.cuts = [c]; return s;
+};
+let S = blank();
+let view = 'setup';
+
+/* ===== 저장 (IndexedDB, 실패해도 동작) ===== */
+const DB = { name: 'cutplan', store: 'kv' };
+const idb = () => new Promise((res, rej) => {
+  try { const r = indexedDB.open(DB.name, 1); r.onupgradeneeded = () => r.result.createObjectStore(DB.store); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }
+  catch (e) { rej(e); }
+});
+const idbGet = async () => { try { const d = await idb(); return await new Promise(res => { const q = d.transaction(DB.store).objectStore(DB.store).get('state'); q.onsuccess = () => res(q.result || null); q.onerror = () => res(null); }); } catch (e) { return null; } };
+const idbPut = async v => { try { const d = await idb(); await new Promise((res, rej) => { const t = d.transaction(DB.store, 'readwrite'); t.objectStore(DB.store).put(v, 'state'); t.oncomplete = res; t.onerror = rej; }); return true; } catch (e) { return false; } };
+let saveTimer = 0;
+const save = () => { clearTimeout(saveTimer); saveTimer = setTimeout(async () => {
+  const ok = await idbPut(JSON.parse(JSON.stringify(S)));
+  $('#saved').textContent = ok ? '이 기기에 자동 저장됨' : '자동 저장을 쓸 수 없어요. 작업 코드를 직접 복사해 두세요.';
+}, 500); };
+
+/* ===== 도우미 ===== */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const cut = () => S.cuts[S.sel] || S.cuts[0];
+let toastT = 0;
+const toast = m => { const t = $('#toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2200); };
+const opts = (arr, cur, ph) => `<option value="">${ph || '선택'}</option>` + arr.map(o => { const v = Array.isArray(o) ? o[0] : o; return `<option value="${esc(v)}"${v === cur ? ' selected' : ''}>${esc(v)}</option>`; }).join('');
+const copyText = async (text, ta) => {
+  try { await navigator.clipboard.writeText(text); toast('복사했어요'); return; } catch (e) {}
+  try { if (ta) { ta.focus(); ta.select(); if (document.execCommand('copy')) { toast('복사했어요'); return; } } } catch (e) {}
+  if (ta) { ta.focus(); ta.select(); }
+  toast('길게 눌러 복사해 주세요');
+};
+
+/* ===== 프롬프트 조립 ===== */
+function build(c) {
+  const m = S.meta, L = [];
+  const ratioLbl = { '16:9': '가로형', '4:3': '가로형', '2.39:1': '와이드 시네마', '1:1': '정사각형', '9:16': '세로형' }[m.ratio] || '';
+  L.push(`${m.style || '영화 장면'} 느낌의 이미지 한 장을 만들어 주세요. 화면 비율은 ${m.ratio}(${ratioLbl})입니다.`);
+  if (c.scene.trim()) L.push(`장면: ${c.scene.trim()}`);
+  const who = S.chars.filter(x => c.chars.includes(x.id)).map(x => x.look ? `${x.name}(${x.look})` : x.name);
+  if (who.length) L.push(`등장인물: ${who.join(', ')}`);
+  if (c.place.trim()) L.push(`배경·시간: ${c.place.trim()}`);
+  const cam = [c.shot, c.angle, c.comp && `${c.comp} 구도`].filter(Boolean);
+  if (cam.length) L.push(`카메라: ${cam.join(', ')}`);
+  const lt = [c.light, c.tone].filter(Boolean);
+  if (lt.length) L.push(`빛과 색감: ${lt.join(', ')}`);
+  if (c.mood.trim()) L.push(`분위기: ${c.mood.trim()}`);
+  if (m.styleNote.trim()) L.push(`추가 스타일: ${m.styleNote.trim()}`);
+  L.push('이미지 안에 글자, 로고, 워터마크는 넣지 말아 주세요.');
+  let out = L.join('\n');
+  if (m.lang === 'both') {
+    const kw = [EN('style', m.style) || 'cinematic still', EN('shot', c.shot), EN('angle', c.angle), EN('comp', c.comp), EN('light', c.light), EN('tone', c.tone)].filter(Boolean);
+    out += `\n\nEnglish keywords: ${kw.join(', ')}, aspect ratio ${m.ratio}, no text, no logo, no watermark`;
+  }
+  return out;
+}
+const promptOf = c => (c.edited && c.override) ? c.override : build(c);
+const missing = c => { const m = []; if (!c.scene.trim()) m.push('장면 설명'); if (!c.shot) m.push('샷 크기'); if (!c.angle) m.push('앵글'); if (!c.intent.trim()) m.push('연출 의도'); return m; };
+
+/* ===== 이미지 축소 ===== */
+const shrink = file => new Promise((res, rej) => {
+  const fr = new FileReader();
+  fr.onerror = () => rej(new Error('read'));
+  fr.onload = () => { const im = new Image(); im.onerror = () => rej(new Error('img')); im.onload = () => {
+    const k = Math.min(1, 1400 / Math.max(im.width, im.height)); const cv = document.createElement('canvas');
+    cv.width = Math.round(im.width * k); cv.height = Math.round(im.height * k);
+    const g = cv.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, cv.width, cv.height); g.drawImage(im, 0, 0, cv.width, cv.height);
+    res(cv.toDataURL('image/jpeg', 0.85)); }; im.src = fr.result; };
+  fr.readAsDataURL(file);
+});
+
+/* ===== 초안 가져오기: 빈 줄 또는 번호로 컷 분할 ===== */
+function splitDraft(t) {
+  t = t.replace(/\r/g, '').trim(); if (!t) return [];
+  let parts = t.split(/\n\s*\n+/);
+  if (parts.length < 2) parts = t.split(/\n(?=\s*(?:#?\s*\d{1,2}\s*[\).:·]|컷\s*\d{1,2}|S#\s*\d{1,2}))/i);
+  if (parts.length < 2) parts = t.split(/\n/);
+  return parts.map(p => p.replace(/^\s*(?:#?\s*\d{1,2}\s*[\).:·]|컷\s*\d{1,2}\s*[\).:·]?|S#\s*\d{1,2}\s*[\).:·]?)\s*/i, '').trim()).filter(Boolean).slice(0, 20);
+}
+
+/* ===== 작업 코드 ===== */
+const enc = o => 'CUTPLAN1:' + btoa(unescape(encodeURIComponent(JSON.stringify(o))));
+const dec = s => { s = s.trim(); if (s.startsWith('CUTPLAN1:')) s = s.slice(9); else if (s[0] === '{') return JSON.parse(s); return JSON.parse(decodeURIComponent(escape(atob(s)))); };
+const textOnly = () => { const o = JSON.parse(JSON.stringify(S)); o.cuts.forEach(c => { c.img = ''; }); return o; };
+const normalize = o => { const b = blank(); const s = Object.assign(b, o); s.meta = Object.assign(b.meta, o.meta || {}); s.reflect = Object.assign(b.reflect, o.reflect || {});
+  s.reflect.decided = Object.assign(b.reflect.decided, (o.reflect || {}).decided || {}); s.chars = o.chars || []; s.cuts = (o.cuts && o.cuts.length ? o.cuts : [newCut()]).map(c => Object.assign(newCut(), c)); s.sel = Math.min(o.sel || 0, s.cuts.length - 1); return s; };
+/* ===== 탭 ===== */
+const TABS = [['setup', '설정·초안'], ['cuts', '컷 만들기'], ['board', '스토리보드'], ['out', '성찰·내보내기']];
+function renderTabs() {
+  $('#tabs').innerHTML = TABS.map((t, i) => `<button role="tab" data-act="goto" data-v="${t[0]}" aria-selected="${view === t[0]}"><span class="n">${i + 1}</span>${t[1]}</button>`).join('');
+}
+function go(v) { view = v; render(); window.scrollTo(0, 0); }
+function render() {
+  renderTabs();
+  const f = { setup: renderSetup, cuts: renderCuts, board: renderBoard, out: renderOut }[view];
+  $('#view').innerHTML = f();
+  if (view === 'cuts') afterCuts();
+}
+const exampleBanner = () => S.cuts.some(c => c.example) ? `<div class="warn">지금 들어 있는 컷은 사용법을 보여 주는 <b>예시</b>입니다. 내용을 지우고 내 작품으로 바꿔 쓰거나, <button class="btn small" data-act="reset">비우고 새로 시작</button>을 눌러 주세요.</div>` : '';
+
+/* ===== 1. 설정·초안 ===== */
+function codePanel() {
+  return `<div class="panel"><h2>작업 코드로 기기 옮기기</h2>
+  <p class="lead">1차시에 PC에서 만든 글 내용을 휴대폰에서 이어 쓰려면, 여기서 코드를 복사해 메신저나 메일로 나에게 보내세요. 다른 기기에서 붙여넣고 불러오면 됩니다. 코드에는 이미지가 들어가지 않습니다.</p>
+  <div class="row"><button class="btn primary" data-act="copyCode">작업 코드 복사</button><button class="btn" data-act="saveFile">이미지 포함 파일로 저장 (.json)</button></div>
+  <div class="field" style="margin-top:12px"><label for="codein">다른 기기에서 복사한 작업 코드 붙여넣기</label>
+  <textarea id="codein" placeholder="CUTPLAN1:..."></textarea></div>
+  <div class="row"><button class="btn" data-act="importCode">코드 불러오기</button>
+  <label class="btn" for="jsonfile" style="margin:0">저장한 파일 열기</label><input id="jsonfile" type="file" accept=".json,application/json" hidden></div></div>`;
+}
+function renderSetup() {
+  const m = S.meta;
+  const chars = S.chars.map((c, i) => `<div class="grid2" style="align-items:end;margin-bottom:8px">
+    <div class="field" style="margin:0"><label>이름</label><input type="text" data-ch="${i}" data-k="name" value="${esc(c.name)}" placeholder="예: 소녀"></div>
+    <div class="field" style="margin:0"><label>외모·옷·소품 (모든 컷에 똑같이 들어가요)</label><input type="text" data-ch="${i}" data-k="look" value="${esc(c.look)}" placeholder="예: 단발머리, 노란 우산, 회색 교복"></div>
+    <div><button class="btn small danger" data-act="delChar" data-i="${i}">삭제</button></div></div>`).join('');
+  return `${exampleBanner()}
+  <h2>1단계. 작품과 스타일 정하기</h2>
+  <p class="lead">한 번 정한 화풍과 비율은 모든 컷 프롬프트에 똑같이 들어가서 그림의 분위기가 통일됩니다.</p>
+  <div class="split"><div>
+    <div class="panel"><h3>작품 정보</h3>
+      <div class="field"><label for="m-poem">시 제목</label><input type="text" id="m-poem" data-m="poem" value="${esc(m.poem)}"></div>
+      <div class="grid2"><div class="field"><label for="m-poet">시인</label><input type="text" id="m-poet" data-m="poet" value="${esc(m.poet)}"></div>
+      <div class="field"><label for="m-author">제작자 (학번·이름 또는 모둠명)</label><input type="text" id="m-author" data-m="author" value="${esc(m.author)}"></div></div></div>
+    <div class="panel"><h3>스타일 고정</h3>
+      <div class="grid2"><div class="field"><label for="m-style">화풍·매체</label><select id="m-style" data-m="style">${opts(OPT.style, m.style, '선택')}</select></div>
+      <div class="field"><label for="m-ratio">화면 비율</label><select id="m-ratio" data-m="ratio">${OPT.ratio.map(r => `<option${r === m.ratio ? ' selected' : ''}>${r}</option>`).join('')}</select></div></div>
+      <div class="field"><label for="m-note">추가 스타일 (선택)</label><input type="text" id="m-note" data-m="styleNote" value="${esc(m.styleNote)}" placeholder="예: 부드러운 입자감, 잔잔한 색"></div>
+      <div class="field"><label for="m-lang">프롬프트 언어</label><select id="m-lang" data-m="lang"><option value="ko"${m.lang === 'ko' ? ' selected' : ''}>한국어</option><option value="both"${m.lang === 'both' ? ' selected' : ''}>한국어 + 영어 키워드 병기</option></select>
+      <p class="tip">ChatGPT와 Gemini 모두 한국어로 잘 알아듣습니다. 카메라·화풍 표현이 기대와 다르게 나오면 영어 키워드 병기로 바꿔 보세요.</p></div></div>
+    <div class="panel"><h3>인물·소품 카드</h3>
+      <p class="tip" style="margin-bottom:10px">컷마다 같은 인물이 비슷하게 나오도록 외모 설명을 한 번만 적어 둡니다.</p>
+      ${chars || '<p class="tip">아직 없어요.</p>'}<button class="btn small" data-act="addChar">+ 인물·소품 추가</button></div>
+  </div><div class="stick">
+    <div class="panel"><h3>스토리보드 초안 가져오기</h3>
+      <p class="tip" style="margin-bottom:8px">학습지에 적은 컷별 설명을 입력하세요. 컷 사이에 빈 줄을 하나 넣거나 1) 2) 처럼 번호를 붙이면 컷으로 자동으로 나뉩니다. (10컷 이내 권장)</p>
+      <label for="draft">컷별 장면 설명</label>
+      <textarea id="draft" style="min-height:180px" placeholder="1) 비 그친 저녁, 소녀가 빈 정류장에 앉아 있다.&#10;&#10;2) 소녀가 우산을 펴 들고 걸어간다."></textarea>
+      <div class="row" style="margin-top:10px"><button class="btn primary" data-act="split">컷으로 나누기</button><span class="tip" id="splitmsg"></span></div></div>
+    ${codePanel()}
+  </div></div>
+  <div class="row"><button class="btn primary" data-act="goto" data-v="cuts">다음: 컷 만들기</button></div>`;
+}
+
+/* ===== 2. 컷 만들기 ===== */
+function renderCuts() {
+  const c = cut(), m = S.meta;
+  const strip = S.cuts.map((x, i) => `<button class="chip" data-act="selCut" data-i="${i}" aria-pressed="${i === S.sel}">컷 ${i + 1}</button>`).join('') + `<button class="chip add" data-act="addCut">+ 컷 추가</button>`;
+  const chars = S.chars.length ? `<div class="field"><label>등장인물</label><div class="row">${S.chars.map(x => `<button type="button" class="chip" data-act="toggleChar" data-id="${x.id}" aria-pressed="${c.chars.includes(x.id)}">${esc(x.name || '이름 없음')}</button>`).join('')}</div></div>`
+    : `<p class="tip">등장인물은 1단계의 인물·소품 카드에서 만들 수 있어요.</p>`;
+  const sel = (key, label, arr, ph) => `<div class="field"><label for="c-${key}">${label}</label><select id="c-${key}" data-c="${key}">${opts(arr, c[key], ph || '선택')}</select>${['shot', 'angle', 'comp'].includes(key) ? `<p class="tip" id="tip-${key}">${esc(TIP(key, c[key]))}</p>` : ''}</div>`;
+  return `${exampleBanner()}
+  <div class="strip" role="group" aria-label="컷 선택">${strip}</div>
+  <div class="split"><div>
+    <div class="panel"><h3>컷 ${S.sel + 1} 내용</h3>
+      <div class="field"><label for="c-verse">이 컷이 담는 시 구절</label><textarea id="c-verse" data-c="verse" style="min-height:56px" placeholder="시에서 이 컷의 바탕이 된 부분">${esc(c.verse)}</textarea></div>
+      <div class="field"><label for="c-scene">장면 설명 <span class="req">*</span></label><textarea id="c-scene" data-c="scene" placeholder="누가, 어디서, 무엇을 하는지 눈에 보이게 적어요. 마음속 생각 대신 보이는 모습으로.">${esc(c.scene)}</textarea></div>
+      ${chars}
+      <div class="field"><label for="c-place">배경·시간·날씨</label><input type="text" id="c-place" data-c="place" value="${esc(c.place)}" placeholder="예: 비 갠 뒤 젖은 골목, 해 질 무렵"></div></div>
+    <div class="panel"><h3>카메라와 분위기</h3>
+      <div class="grid2">${sel('shot', '샷 크기 <span class="req">*</span>', OPT.shot)}${sel('angle', '카메라 앵글 <span class="req">*</span>', OPT.angle)}</div>
+      ${sel('comp', '구도', OPT.comp)}
+      <div class="grid2">${sel('light', '빛', OPT.light)}${sel('tone', '색감', OPT.tone)}</div>
+      <div class="field"><label for="c-mood">분위기·정서</label><input type="text" id="c-mood" data-c="mood" list="moods" value="${esc(c.mood)}" placeholder="예: 쓸쓸하지만 조금 후련한">
+      <datalist id="moods"><option>쓸쓸함</option><option>그리움</option><option>설렘</option><option>긴장</option><option>평온</option><option>불안</option><option>희망</option></datalist></div></div>
+    <div class="panel"><h3>해석 기록</h3>
+      <div class="field"><label for="c-intent">연출 의도 <span class="req">*</span></label><textarea id="c-intent" data-c="intent" placeholder="○○ 앵글(샷)을 쓴 이유는 시의 ○○한 정서를 살리기 위해서다.">${esc(c.intent)}</textarea></div>
+      <div class="field"><label for="c-sound">소리 설계 (선택)</label><input type="text" id="c-sound" data-c="sound" value="${esc(c.sound)}" placeholder="음악, 효과음, 낭송 톤을 한 줄로"></div>
+      <div class="grid2"><div class="field"><label for="c-src">이미지 출처</label><select id="c-src" data-c="src">${OPT.src.map(s => `<option${s === c.src ? ' selected' : ''}>${s}</option>`).join('')}</select></div>
+      <div class="field"><label for="c-status">컷 상태</label><select id="c-status" data-c="status">${OPT.status.map(s => `<option${s === c.status ? ' selected' : ''}>${s}</option>`).join('')}</select></div></div></div>
+  </div><div class="stick">
+    <div class="panel"><h3>이미지 생성용 프롬프트</h3>
+      <div id="miss"></div>
+      <textarea class="promptbox" id="pbox" aria-label="조립된 프롬프트"></textarea>
+      <p class="tip" id="pnote"></p>
+      <div class="row"><button class="btn primary" data-act="copyPrompt">프롬프트 복사</button><button class="btn" data-act="resetPrompt" id="rstp" hidden>자동 조립으로 되돌리기</button></div>
+      <p class="tip" style="margin-top:8px">복사한 뒤 ChatGPT나 Gemini에 붙여넣어 이미지를 만들고, 완성된 이미지를 아래에 올리세요.</p></div>
+    <div class="panel"><h3>이미지 올리기</h3>
+      <div id="imgarea"></div></div>
+    <div class="panel"><h3>프롬프트 수정 기록</h3>
+      <p class="tip" style="margin-bottom:8px">결과가 마음에 안 들어 프롬프트를 고칠 때마다 기록하면, 무엇을 왜 바꿨는지가 보고서에 남아요.</p>
+      <div class="row" id="rchips" style="margin-bottom:8px">${OPT.reasons.map(r => `<button type="button" class="chip" data-act="reason" data-r="${r}">${r}</button>`).join('')}</div>
+      <div class="field"><label for="rtext">무엇을 왜 바꿨나요?</label><input type="text" id="rtext" placeholder="예: 인물이 너무 밝게 나와서 흐린 빛으로 바꿈"></div>
+      <button class="btn small" data-act="saveVer">지금 프롬프트를 새 버전으로 기록</button>
+      <ul class="hist" id="hist" style="margin-top:10px"></ul></div>
+  </div></div>
+  <div class="row"><button class="btn" data-act="goto" data-v="setup">이전</button><button class="btn primary" data-act="goto" data-v="board">스토리보드 보기</button></div>`;
+}
+function imgHtml(c) {
+  const ar = S.meta.ratio.replace(':', ' / ');
+  if (c.img) return `<div class="imgframe" style="aspect-ratio:${ar}"><img src="${c.img}" alt="컷 ${S.sel + 1} 이미지"></div><div class="row" style="margin-top:8px"><label class="btn small" for="imgfile" style="margin:0">다른 이미지로 바꾸기</label><button class="btn small danger" data-act="delImg">이미지 지우기</button></div>`;
+  return `<label class="dropzone" id="drop" for="imgfile" style="aspect-ratio:${ar}">사진을 끌어다 놓거나<br>눌러서 이미지(JPG·PNG·WebP)를 고르세요</label>`;
+}
+function afterCuts() { refreshPrompt(); refreshHist(); $('#imgarea').innerHTML = imgHtml(cut()) + '<input id="imgfile" type="file" accept="image/*" hidden>'; }
+function refreshPrompt() {
+  const c = cut(), box = $('#pbox'); if (!box) return;
+  box.value = promptOf(c);
+  const mi = missing(c); $('#miss').innerHTML = mi.length ? `<div class="warn">아직 비어 있는 항목: ${mi.join(', ')}</div>` : '';
+  $('#rstp').hidden = !c.edited;
+  $('#pnote').textContent = c.edited ? '직접 고친 프롬프트예요. 위 입력칸을 바꿔도 이 글은 자동으로 바뀌지 않아요.' : '위 입력칸을 채우면 프롬프트가 자동으로 만들어져요. 필요하면 직접 고칠 수도 있어요.';
+}
+function refreshHist() {
+  const c = cut(), ul = $('#hist'); if (!ul) return;
+  ul.innerHTML = c.hist.length ? c.hist.map((h, i) => `<li><span class="v">v${h.v}</span>${esc(h.reason || '수정 이유 미기록')}<div class="row" style="margin-top:6px"><button class="btn small" data-act="copyVer" data-i="${i}">이 버전 복사</button></div></li>`).reverse().join('') : '<li class="tip">아직 기록이 없어요.</li>';
+}
+/* ===== 3. 스토리보드 ===== */
+const X = { layout: 'A', prompt: true, intent: true, hist: false, delId: '', pages: [], blob: null, warn: '', busy: false };
+function renderBoard() {
+  const ar = S.meta.ratio.replace(':', ' / ');
+  const done = S.cuts.filter(c => c.img).length;
+  const cards = S.cuts.map((c, i) => `<div class="card">
+    <div class="imgframe" style="aspect-ratio:${ar}">${c.img ? `<img src="${c.img}" alt="컷 ${i + 1}">` : `<div class="empty">이미지 대기<br>(컷 만들기에서 올려요)</div>`}</div>
+    <div class="row" style="justify-content:space-between"><b>컷 ${i + 1}</b><span class="state">${esc(c.status)}</span></div>
+    <div class="meta">${[c.shot, c.angle, c.comp].filter(Boolean).map(esc).join(' · ') || '샷·앵글 미선택'} · ${esc(c.src)}</div>
+    <p class="scene">${esc(c.scene) || '<span class="tip">장면 설명이 비어 있어요.</span>'}</p>
+    ${c.intent ? `<div class="meta">의도: ${esc(c.intent)}</div>` : ''}
+    <div class="row">
+      <button class="btn small" data-act="editCut" data-i="${i}">편집</button>
+      <button class="btn small" data-act="move" data-i="${i}" data-d="-1" ${i === 0 ? 'disabled' : ''} aria-label="앞으로">← 앞</button>
+      <button class="btn small" data-act="move" data-i="${i}" data-d="1" ${i === S.cuts.length - 1 ? 'disabled' : ''} aria-label="뒤로">뒤 →</button>
+      <button class="btn small" data-act="dup" data-i="${i}">복제</button>
+      <button class="btn small danger" data-act="del" data-i="${i}">${X.delId === c.id ? '정말 삭제' : '삭제'}</button></div></div>`).join('');
+  return `${exampleBanner()}<h2>3단계. 스토리보드 확인</h2>
+  <p class="lead">${S.cuts.length}컷 중 ${done}컷에 이미지가 올라가 있어요. 순서를 바꿔 이야기의 흐름을 다듬어 보세요.</p>
+  <div class="cards">${cards}</div>
+  <div class="row" style="margin-top:16px"><button class="btn" data-act="addCut2">+ 컷 추가</button><button class="btn primary" data-act="goto" data-v="out">다음: 성찰·내보내기</button></div>`;
+}
+
+/* ===== 4. 성찰·내보내기 ===== */
+function renderOut() {
+  const r = S.reflect, d = r.decided;
+  const ta = (k, label, ph) => `<div class="field"><label for="r-${k}">${label}</label><textarea id="r-${k}" data-r="${k}" placeholder="${ph}">${esc(r[k])}</textarea></div>`;
+  const chk = (k, t) => `<label class="check"><input type="checkbox" data-rd="${k}" ${d[k] ? 'checked' : ''}><span>${t}</span></label>`;
+  return `${exampleBanner()}<h2>4단계. 성찰 쓰고 PDF 만들기</h2>
+  <p class="lead">PDF 마지막 쪽에 들어갈 성찰을 먼저 적고, 레이아웃을 고른 뒤 PDF를 만드세요.</p>
+  <div class="split"><div>
+    <div class="panel"><h3>변환 일지: 시 → 소설 → 시나리오 → 컷</h3>
+      ${ta('keep', '살린 것', '시의 어떤 이미지·정서를 그대로 살렸나요?')}
+      ${ta('add', '더한 것', '시에 없었지만 내가 새로 넣은 장면·인물·소품은?')}
+      ${ta('drop', '버린 것', '시에서 영상으로 옮기지 못한 것은 무엇이고 왜 그랬나요?')}</div>
+    <div class="panel"><h3>AI 활용 성찰</h3>
+      ${ta('gap', '간극 분석', '시가 주는 정서가 이미지에서 사라지거나 달라진 곳은 어디인가요?')}
+      <div class="field"><label>내가 직접 결정한 것 (체크)</label>
+      ${chk('look', '인물의 외모·소품')}${chk('angle', '카메라 앵글과 샷 크기')}${chk('mood', '분위기와 색감')}${chk('order', '컷의 순서와 구성')}</div>
+      ${ta('lesson', '배운 점', 'AI가 잘한 것, 어려워한 것, 다음에는 다르게 해 볼 점을 적어 보세요.')}
+      <div class="field"><label for="r-tool">사용한 AI 도구 (이름)</label><input type="text" id="r-tool" data-r="tool" value="${esc(r.tool)}" placeholder="예: ChatGPT, Gemini"></div></div>
+  </div><div class="stick">
+    <div class="panel"><h3>PDF 설정</h3>
+      <div class="field"><label for="x-layout">레이아웃</label><select id="x-layout" data-x="layout"><option value="A"${X.layout === 'A' ? ' selected' : ''}>A4 가로, 한 쪽에 4컷</option><option value="B"${X.layout === 'B' ? ' selected' : ''}>A4 세로, 한 쪽에 3컷</option></select></div>
+      <label class="check"><input type="checkbox" data-x="intent" ${X.intent ? 'checked' : ''}><span>연출 의도 넣기</span></label>
+      <label class="check"><input type="checkbox" data-x="prompt" ${X.prompt ? 'checked' : ''}><span>최종 프롬프트 넣기</span></label>
+      <label class="check"><input type="checkbox" data-x="hist" ${X.hist ? 'checked' : ''}><span>프롬프트 수정 이력 쪽 추가</span></label>
+      <div id="xwarn">${X.warn ? `<div class="warn">${X.warn}</div>` : ''}</div>
+      <div class="row"><button class="btn primary" data-act="makePdf" ${X.busy ? 'disabled' : ''}>${X.busy ? 'PDF 만드는 중…' : X.warn ? '그래도 PDF 만들기' : 'PDF 만들기'}</button>
+      ${X.canSave === false ? '' : `<button class="btn" data-act="savePdf" ${X.blob ? '' : 'disabled'}>PDF 저장</button>`}</div>
+      ${X.canSave === false && !X.saveMsg ? `<div class="warn">이 화면에서는 PDF 파일 저장을 쓸 수 없어요. PDF를 만든 뒤 아래 각 쪽의 [크게 보기]를 눌러 이미지를 길게 눌러 저장하거나 화면을 캡처해 주세요.</div>` : ''}${X.saveMsg ? `<div class="warn">${X.saveMsg}</div>` : ''}<p class="tip">PDF 저장이 안 되는 휴대폰에서는 아래 각 쪽을 길게 눌러 '이미지 저장'(또는 '사진에 추가')을 ${X.canSave === false ? '하거나 화면을 캡처하세요.' : '하거나, 쪽마다 있는 [이 쪽 저장]을 누르세요.'} 저장한 쪽 이미지를 함께 제출해도 됩니다.</p>
+      <div class="pages" id="pages" style="${X.canSave === false ? 'grid-template-columns:minmax(0,1fr)' : ''}">${X.pages.map((p, i) => `<figure style="margin:0"><img src="${p}" alt="PDF ${i + 1}쪽" data-act="zoom" data-i="${i}"><div class="row" style="margin-top:6px;justify-content:space-between"><span class="tip">${i + 1}쪽</span><button class="btn small" data-act="zoom" data-i="${i}">크게 보기</button>${X.canSave === false ? '' : `<button class="btn small" data-act="savePage" data-i="${i}">이 쪽 저장</button>`}</div></figure>`).join('')}</div></div>
+  </div></div>
+  ${codePanel()}`;
+}
+
+/* ===== PDF: 캔버스로 한 쪽씩 그린 뒤 jsPDF에 넣기 ===== */
+const FONT = '"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif', SERIF = '"Gowun Batang","Batang",serif';
+const INK = '#18212b', MUT = '#5d6b7a', LINE = '#c9d1d9', ACC = '#0e6f68';
+const loadImg = src => new Promise(res => { if (!src) return res(null); const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src; });
+function lines(g, text, w) {
+  const out = [];
+  String(text || '').split('\n').forEach(par => { let cur = ''; for (const ch of par) { if (g.measureText(cur + ch).width > w && cur) { out.push(cur); cur = ch; } else cur += ch; } out.push(cur); });
+  return out;
+}
+function para(g, text, x, y, w, size, lh, maxLines, color, font, weight) {
+  g.font = `${weight || 400} ${size}px ${font || FONT}`; g.fillStyle = color || INK; g.textBaseline = 'top';
+  let ls = lines(g, text, w);
+  if (maxLines && ls.length > maxLines) { ls = ls.slice(0, maxLines); let t = ls[maxLines - 1]; while (t && g.measureText(t + '…').width > w) t = t.slice(0, -1); ls[maxLines - 1] = t + '…'; }
+  ls.forEach((l, i) => g.fillText(l, x, y + i * lh)); return y + ls.length * lh;
+}
+function mkPage(W, H) { const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, W, H); return { cv, g, W, H }; }
+function ratioVal() { const [a, b] = S.meta.ratio.split(':').map(Number); return a / b; }
+function imgBox(g, im, x, y, w, h) {
+  g.fillStyle = '#e9edf0'; g.fillRect(x, y, w, h);
+  if (im) { const k = Math.max(w / im.width, h / im.height), sw = w / k, sh = h / k; g.drawImage(im, (im.width - sw) / 2, (im.height - sh) / 2, sw, sh, x, y, w, h); }
+  else { g.font = `400 18px ${FONT}`; g.fillStyle = '#8a97a3'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('이미지 대기', x + w / 2, y + h / 2); g.textAlign = 'left'; }
+  g.strokeStyle = LINE; g.lineWidth = 1; g.strokeRect(x + .5, y + .5, w - 1, h - 1);
+}
+function frame(P, no, total) {
+  const g = P.g; g.font = `400 17px ${FONT}`; g.fillStyle = MUT; g.textBaseline = 'top'; g.textAlign = 'left';
+  g.fillText(`${S.meta.poem || '제목 없음'}${S.meta.author ? ' · ' + S.meta.author : ''}`, 60, 34);
+  g.textAlign = 'right'; g.fillText(`${no} / ${total}`, P.W - 60, 34); g.textAlign = 'left';
+  g.strokeStyle = LINE; g.beginPath(); g.moveTo(60, 66.5); g.lineTo(P.W - 60, 66.5); g.stroke();
+}
+function cutCell(g, c, i, im, x, y, w, h, big) {
+  const r = ratioVal(), maxW = Math.round(w * (big ? .5 : .55)), maxH = h - 40;
+  const bw = Math.round(Math.min(maxW, maxH * r)), bh = Math.round(bw / r);
+  imgBox(g, im, x, y, bw, bh);
+  let vy = y + bh + 10; if (c.verse.trim() && !c.example) vy = para(g, '“' + c.verse.trim() + '”', x, vy, bw, big ? 19 : 16, big ? 28 : 23, 3, MUT, SERIF);
+  const tx = x + bw + 22, tw = w - bw - 22, s = big ? 1.15 : 1;
+  g.font = `700 ${Math.round(26 * s)}px ${FONT}`; g.fillStyle = ACC; g.textBaseline = 'top'; g.fillText(`컷 ${i + 1}`, tx, y);
+  let ty = y + 36 * s;
+  const tag = [c.shot, c.angle, c.comp, c.src].filter(Boolean).join(' · '); ty = para(g, tag, tx, ty, tw, Math.round(16 * s), Math.round(23 * s), 2, MUT) + 6;
+  ty = para(g, c.scene || '(장면 설명 없음)', tx, ty, tw, Math.round(20 * s), Math.round(30 * s), big ? 7 : 6, INK) + 8;
+  if (X.intent && c.intent) { ty = para(g, '연출 의도', tx, ty, tw, Math.round(15 * s), Math.round(22 * s), 1, ACC, FONT, 700); ty = para(g, c.intent, tx, ty, tw, Math.round(17 * s), Math.round(25 * s), big ? 5 : 4, INK) + 6; }
+  if (X.prompt) { const room = Math.max(0, Math.floor((y + h - ty - 24) / (13 * s * 1.5))); if (room >= 2) { ty = para(g, '프롬프트', tx, ty, tw, Math.round(13 * s), Math.round(19 * s), 1, MUT, FONT, 700); para(g, promptOf(c).replace(/\n+/g, ' '), tx, ty, tw, Math.round(13 * s), Math.round(19 * s), Math.min(room - 1, big ? 5 : 4), MUT); } }
+}
+function textPages(W, H, title, blocks, startNo) {
+  const pages = []; let P = mkPage(W, H), y = 110; const lh = 30;
+  const head = () => { y = 110; para(P.g, title, 60, 84, W - 120, 30, 38, 1, INK, SERIF, 700); y = 140; };
+  head();
+  const need = h => { if (y + h > H - 60) { pages.push(P); P = mkPage(W, H); head(); } };
+  blocks.forEach(b => {
+    P.g.font = `400 21px ${FONT}`; const ls = lines(P.g, b.t || '(작성하지 않음)', W - 120);
+    need(40 + lh * Math.min(ls.length, 3));
+    y = para(P.g, b.h, 60, y, W - 120, 20, 28, 1, ACC, FONT, 700) + 2;
+    ls.forEach(l => { need(lh); P.g.font = `400 21px ${FONT}`; P.g.fillStyle = b.t ? INK : '#8a97a3'; P.g.textBaseline = 'top'; P.g.fillText(l, 60, y); y += lh; });
+    y += 18;
+  });
+  pages.push(P); return pages;
+}
+async function buildPages() {
+  try { await document.fonts.load(`400 20px "Noto Sans KR"`); await document.fonts.load(`700 20px "Noto Sans KR"`); await document.fonts.load(`400 20px "Gowun Batang"`); } catch (e) {}
+  const land = X.layout === 'A', W = land ? 1754 : 1240, H = land ? 1240 : 1754, m = S.meta;
+  const ims = await Promise.all(S.cuts.map(c => loadImg(c.img)));
+  const per = land ? 4 : 3, body = [];
+  for (let p = 0; p < S.cuts.length; p += per) {
+    const P = mkPage(W, H), n = Math.min(per, S.cuts.length - p);
+    if (land) { const cw = (W - 120 - 40) / 2, ch = (H - 130 - 40) / 2;
+      for (let k = 0; k < n; k++) cutCell(P.g, S.cuts[p + k], p + k, ims[p + k], 60 + (k % 2) * (cw + 40), 100 + Math.floor(k / 2) * (ch + 40), cw, ch, false);
+    } else { const ch = (H - 130 - 40 * 2) / 3;
+      for (let k = 0; k < n; k++) cutCell(P.g, S.cuts[p + k], p + k, ims[p + k], 60, 100 + k * (ch + 40), W - 120, ch, true); }
+    body.push(P);
+  }
+  const cover = mkPage(W, H), g = cover.g;
+  g.fillStyle = ACC; g.fillRect(0, 0, W, 16);
+  const cx = 100; let y = Math.round(H * .28);
+  y = para(g, '스토리보드', cx, y, W - 200, 26, 34, 1, ACC, FONT, 700) + 10;
+  y = para(g, m.poem || '(시 제목)', cx, y, W - 200, 64, 82, 3, INK, SERIF, 700) + 10;
+  y = para(g, m.poet ? `원작 시: ${m.poet}` : '', cx, y, W - 200, 26, 38, 1, MUT) + 40;
+  y = para(g, `제작: ${m.author || '(이름)'}`, cx, y, W - 200, 26, 38, 1, INK);
+  y = para(g, `작성일: ${new Date().toLocaleDateString('ko-KR')}`, cx, y, W - 200, 22, 34, 1, MUT);
+  y = para(g, `${S.cuts.length}컷 · ${m.style || ''} · 화면 비율 ${m.ratio}`, cx, y, W - 200, 22, 34, 1, MUT) + 30;
+  const ai = S.cuts.filter(c => c.src === 'AI 생성' && c.img).length;
+  para(g, `이 스토리보드의 이미지 중 ${ai}컷은 AI 이미지 생성 도구로 만들었고, 나머지는 직접 촬영하거나 그렸습니다.${S.reflect.tool ? ' 사용 도구: ' + S.reflect.tool : ''}`, cx, H - 150, W - 200, 18, 28, 3, MUT);
+  const r = S.reflect, dk = Object.entries({ look: '인물의 외모·소품', angle: '앵글과 샷 크기', mood: '분위기와 색감', order: '컷의 순서와 구성' }).filter(([k]) => r.decided[k]).map(e => e[1]);
+  const refl = textPages(W, H, '변환 일지와 성찰', [
+    { h: '살린 것', t: r.keep.trim() }, { h: '더한 것', t: r.add.trim() }, { h: '버린 것', t: r.drop.trim() },
+    { h: '간극 분석: 시의 정서와 이미지가 어긋난 곳', t: r.gap.trim() },
+    { h: '내가 직접 결정한 것', t: dk.join(', ') }, { h: '배운 점', t: r.lesson.trim() }]);
+  let hp = [];
+  if (X.hist) { const hb = []; S.cuts.forEach((c, i) => c.hist.forEach(h => hb.push({ h: `컷 ${i + 1} · v${h.v}`, t: `${h.reason || '수정 이유 미기록'}\n${h.prompt.replace(/\n+/g, ' ')}` }))); hp = textPages(W, H, '프롬프트 수정 이력', hb.length ? hb : [{ h: '기록', t: '' }]); }
+  const all = [cover, ...body, ...refl, ...hp];
+  all.forEach((P, i) => { if (i > 0) frame(P, i + 1, all.length); });
+  return { all, W, H, land };
+}
+/* ===== PDF 만들기·저장 ===== */
+async function makePdf() {
+  const noIntent = S.cuts.map((c, i) => c.intent.trim() ? 0 : i + 1).filter(Boolean);
+  if (noIntent.length && !X.warn) { X.warn = `연출 의도를 쓰지 않은 컷이 있어요: 컷 ${noIntent.join(', ')}. 의도는 이 활동에서 평가하는 핵심 내용이에요.`; render(); return; }
+  X.warn = ''; X.busy = true; X.blob = null; render();
+  try {
+    const { all, W, H, land } = await buildPages();
+    const J = window.jspdf && window.jspdf.jsPDF;
+    X.pages = all.map(P => P.cv.toDataURL('image/jpeg', 0.85)); X.saveMsg = '';
+    if (J) {
+      const pdf = new J({ orientation: land ? 'landscape' : 'portrait', unit: 'pt', format: 'a4' });
+      const pw = pdf.internal.pageSize.getWidth(), ph = pdf.internal.pageSize.getHeight();
+      all.forEach((P, i) => { if (i) pdf.addPage('a4', land ? 'landscape' : 'portrait'); pdf.addImage(P.cv.toDataURL('image/jpeg', 0.88), 'JPEG', 0, 0, pw, ph); });
+      X.blob = pdf.output('blob');
+      toast('PDF를 만들었어요. [PDF 저장]을 눌러 주세요');
+    } else toast('PDF 도구를 불러오지 못했어요. 아래 미리보기 쪽을 이미지로 저장해 주세요');
+  } catch (e) { toast('PDF를 만들지 못했어요. 다시 시도해 주세요'); }
+  X.busy = false; render();
+}
+const fname = ext => `${(S.meta.poem || '스토리보드').replace(/[\\/:*?"<>|]/g, '').slice(0, 40)}${S.meta.author ? '_' + S.meta.author.replace(/[\\/:*?"<>|]/g, '') : ''}.${ext}`;
+const dataUrlToBlob = u => { const [h, b] = u.split(','), mime = (h.match(/:(.*?);/) || [])[1] || 'image/jpeg', bin = atob(b), a = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return new Blob([a], { type: mime }); };
+function fail(code) {
+  if (code === 'declined') { toast('저장을 취소했어요'); return; }
+  if (['unavailable', 'not_granted', 'capability_disabled', 'capability_removed'].includes(code)) X.canSave = false;
+  const blocked = ['unavailable', 'not_granted', 'capability_disabled', 'capability_removed', 'rejected_extension', 'extension_not_enabled'].includes(code);
+  X.saveMsg = blocked ? '이 화면에서는 파일 저장이 막혀 있어요. 아래 각 쪽을 길게 눌러 이미지로 저장해 주세요.' : `저장하지 못했어요. 잠시 후 다시 시도하거나 아래 각 쪽을 길게 눌러 저장해 주세요. (오류: ${esc(code || '알 수 없음')})`;
+  toast('저장하지 못했어요. 화면 안내를 확인해 주세요');
+  if (view === 'out') render();
+}
+async function saveBlob(data, ext, name) {
+  const filename = name || fname(ext);
+  const mime = { pdf: 'application/pdf', json: 'application/json', jpg: 'image/jpeg' }[ext] || 'application/octet-stream';
+  const blob = data instanceof Blob ? data : new Blob([data], { type: mime });
+  const mobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  if (mobile && navigator.canShare && navigator.share) {
+    try {
+      const f = new File([blob], filename, { type: mime });
+      if (navigator.canShare({ files: [f] })) { await navigator.share({ files: [f], title: filename }); toast('저장·공유 창에서 저장 위치를 골라 주세요'); return; }
+    } catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  try {
+    const u = URL.createObjectURL(blob), a = document.createElement('a');
+    a.href = u; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(u), 8000);
+    X.saveMsg = ''; toast('다운로드했어요. 다운로드 폴더를 확인하세요');
+  } catch (e) { fail('unavailable'); }
+}
+
+/* ===== 가져오기 ===== */
+function loadState(o) { S = normalize(o); X.pages = []; X.blob = null; save(); render(); }
+
+/* ===== 이벤트 ===== */
+const V = $('#view');
+V.addEventListener('input', e => {
+  const t = e.target, v = t.type === 'checkbox' ? t.checked : t.value;
+  if (t.id === 'pbox') { const c = cut(), auto = build(c); c.override = t.value; c.edited = t.value !== auto; if (!c.edited) c.override = '';
+    $('#rstp').hidden = !c.edited; $('#pnote').textContent = c.edited ? '직접 고친 프롬프트예요. 위 입력칸을 바꿔도 이 글은 자동으로 바뀌지 않아요.' : '위 입력칸을 채우면 프롬프트가 자동으로 만들어져요. 필요하면 직접 고칠 수도 있어요.'; save(); return; }
+  if (t.dataset.m) S.meta[t.dataset.m] = v;
+  else if (t.dataset.ch) S.chars[+t.dataset.ch][t.dataset.k] = v;
+  else if (t.dataset.c) { const c = cut(); c[t.dataset.c] = v; if (c.example && t.dataset.c !== 'src' && t.dataset.c !== 'status') { /* 예시를 고치면 내 컷으로 취급 */ c.example = false; }
+    const tip = $('#tip-' + t.dataset.c); if (tip) tip.textContent = TIP(t.dataset.c, v);
+    if (!c.edited && c.status === '작성 중' && missing(c).length === 0) { c.status = '프롬프트 완료'; const s = $('#c-status'); if (s) s.value = c.status; }
+    refreshPrompt(); }
+  else if (t.dataset.r) S.reflect[t.dataset.r] = v;
+  else if (t.dataset.rd) S.reflect.decided[t.dataset.rd] = v;
+  else if (t.dataset.x) { X[t.dataset.x] = v; X.pages = []; X.blob = null; X.warn = ''; if (t.dataset.x === 'layout') render(); return; }
+  else return;
+  save();
+});
+V.addEventListener('change', async e => {
+  const t = e.target;
+  if (t.id === 'imgfile' && t.files[0]) {
+    try { const c = cut(); c.img = await shrink(t.files[0]); if (['작성 중', '프롬프트 완료', '수정 중'].includes(c.status)) c.status = '이미지 생성됨'; c.example = false; save(); render(); toast('이미지를 올렸어요'); }
+    catch (er) { toast('이 이미지를 읽지 못했어요. JPG나 PNG로 다시 시도해 주세요'); }
+  }
+  if (t.id === 'jsonfile' && t.files[0]) {
+    try { const txt = await t.files[0].text(); loadState(dec(txt)); toast('작업 파일을 불러왔어요'); } catch (er) { toast('파일을 읽지 못했어요'); }
+  }
+});
+V.addEventListener('dragover', e => { const d = e.target.closest('#drop'); if (d) { e.preventDefault(); d.classList.add('over'); } });
+V.addEventListener('dragleave', e => { const d = e.target.closest('#drop'); if (d) d.classList.remove('over'); });
+V.addEventListener('drop', async e => {
+  const d = e.target.closest('#drop'); if (!d) return; e.preventDefault();
+  const f = e.dataTransfer.files[0]; if (!f || !f.type.startsWith('image/')) { toast('이미지 파일을 놓아 주세요'); return; }
+  try { const c = cut(); c.img = await shrink(f); if (['작성 중', '프롬프트 완료', '수정 중'].includes(c.status)) c.status = '이미지 생성됨'; c.example = false; save(); render(); toast('이미지를 올렸어요'); } catch (er) { toast('이 이미지를 읽지 못했어요'); }
+});
+let reasonPick = '';
+V.addEventListener('click', async e => {
+  const b = e.target.closest('[data-act]'); if (!b) return; const a = b.dataset.act, i = +b.dataset.i;
+  if (a === 'goto') return go(b.dataset.v);
+  if (a === 'reset') { S = blank(); save(); return render(); }
+  if (a === 'addChar') { S.chars.push({ id: uid(), name: '', look: '' }); save(); return render(); }
+  if (a === 'delChar') { const id = S.chars[i].id; S.chars.splice(i, 1); S.cuts.forEach(c => { c.chars = c.chars.filter(x => x !== id); }); save(); return render(); }
+  if (a === 'split') {
+    const parts = splitDraft($('#draft').value); if (!parts.length) { $('#splitmsg').textContent = '내용을 먼저 입력해 주세요.'; return; }
+    const keep = S.cuts.filter(c => !c.example && (c.scene || c.verse || c.img));
+    const made = parts.map(p => { const c = newCut(); c.scene = p; return c; });
+    S.cuts = keep.concat(made); S.sel = keep.length; save(); toast(`${made.length}컷으로 나눴어요`); return go('cuts');
+  }
+  if (a === 'addCut' || a === 'addCut2') { S.cuts.push(newCut()); S.sel = S.cuts.length - 1; save(); return go('cuts'); }
+  if (a === 'selCut') { S.sel = i; save(); return render(); }
+  if (a === 'editCut') { S.sel = i; save(); return go('cuts'); }
+  if (a === 'toggleChar') { const c = cut(), id = b.dataset.id; c.chars = c.chars.includes(id) ? c.chars.filter(x => x !== id) : c.chars.concat(id); b.setAttribute('aria-pressed', c.chars.includes(id)); refreshPrompt(); return save(); }
+  if (a === 'copyPrompt') { const c = cut(); await copyText($('#pbox').value, $('#pbox')); if (c.status === '작성 중' && !missing(c).length) { c.status = '프롬프트 완료'; const s = $('#c-status'); if (s) s.value = c.status; save(); } return; }
+  if (a === 'resetPrompt') { const c = cut(); c.edited = false; c.override = ''; refreshPrompt(); return save(); }
+  if (a === 'reason') { reasonPick = b.dataset.r; $$('#rchips .chip').forEach(x => x.setAttribute('aria-pressed', x === b)); return; }
+  if (a === 'saveVer') { const c = cut(), txt = $('#rtext').value.trim(); c.hist.push({ v: c.hist.length + 1, prompt: promptOf(c), reason: [reasonPick, txt].filter(Boolean).join(': ') }); if (c.status === '이미지 생성됨') c.status = '수정 중'; const s = $('#c-status'); if (s) s.value = c.status; $('#rtext').value = ''; reasonPick = ''; $$('#rchips .chip').forEach(x => x.setAttribute('aria-pressed', 'false')); refreshHist(); toast(`v${c.hist.length}로 기록했어요`); return save(); }
+  if (a === 'copyVer') { await copyText(cut().hist[i].prompt); return; }
+  if (a === 'delImg') { cut().img = ''; $('#imgarea').innerHTML = imgHtml(cut()) + '<input id="imgfile" type="file" accept="image/*" hidden>'; return save(); }
+  if (a === 'move') { const d = +b.dataset.d, j = i + d; if (j < 0 || j >= S.cuts.length) return; [S.cuts[i], S.cuts[j]] = [S.cuts[j], S.cuts[i]]; S.sel = j; save(); return render(); }
+  if (a === 'dup') { const c = JSON.parse(JSON.stringify(S.cuts[i])); c.id = uid(); c.hist = []; c.example = false; S.cuts.splice(i + 1, 0, c); S.sel = i + 1; save(); return render(); }
+  if (a === 'del') { const c = S.cuts[i]; if (X.delId !== c.id) { X.delId = c.id; return render(); } X.delId = ''; S.cuts.splice(i, 1); if (!S.cuts.length) S.cuts.push(newCut()); S.sel = Math.min(S.sel, S.cuts.length - 1); save(); return render(); }
+  if (a === 'copyCode') { const ta = document.createElement('textarea'); ta.value = enc(textOnly()); ta.style.cssText = 'position:fixed;left:-9999px'; document.body.appendChild(ta); await copyText(ta.value, ta); ta.remove(); return; }
+  if (a === 'saveFile') return saveBlob(JSON.stringify(S), 'json');
+  if (a === 'importCode') { try { loadState(dec($('#codein').value)); toast('작업을 불러왔어요'); } catch (er) { toast('코드를 읽지 못했어요. 처음부터 끝까지 복사했는지 확인해 주세요'); } return; }
+  if (a === 'makePdf') return makePdf();
+  if (a === 'savePdf') return X.blob && saveBlob(X.blob, 'pdf');
+  if (a === 'zoom') { if (!X.pages[i]) return; const o = document.createElement('div'); o.style.cssText = 'position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.88);overflow:auto;padding:max(12px,env(safe-area-inset-top,0px)) 12px calc(12px + env(safe-area-inset-bottom,0px))'; o.innerHTML = `<p style="color:#fff;font-size:13px;margin:0 0 8px">이미지를 길게 눌러 저장하거나 화면을 캡처하세요. 아무 곳이나 짧게 누르면 닫혀요.</p><img src="${X.pages[i]}" alt="PDF ${i + 1}쪽 크게 보기" style="width:100%;max-width:1100px;display:block;margin:0 auto;background:#fff">`; o.onclick = () => o.remove(); document.body.appendChild(o); return; }
+  if (a === 'savePage') return X.pages[i] && saveBlob(dataUrlToBlob(X.pages[i]), 'jpg', fname('jpg').replace('.jpg', `_${i + 1}쪽.jpg`));
+});
+
+/* 상단 단계 탭: 어느 단계로든 이동 */
+$('#tabs').addEventListener('click', e => { const b = e.target.closest('[data-act="goto"]'); if (b) go(b.dataset.v); });
+
+/* ===== 시작 ===== */
+(async () => {
+  const saved = await idbGet();
+  S = saved ? normalize(saved) : example();
+  render();
+  $('#saved').textContent = '';
+  X.canSave = true;
+  if (X.canSave === false && view === 'out') render();
+})();
+</script>
+</body>
+</html>
